@@ -1,0 +1,21 @@
+[package]
+name = "scoreboard-plus-remote"
+version = "0.1.1"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+# See https://stackoverflow.com/questions/29008127/why-are-rust-executables-so-huge for reference
+[profile.release]
+opt-level = "z"     # Optimize for size.
+lto = true          # Enable Link Time Optimization
+codegen-units = 1   # Reduce number of codegen units to increase optimizations.
+# arm-target does not support panic="abort" for some reason
+# panic = "abort"     # Abort on panic
+strip = true        # Automatically strip symbols from the binary.
+
+[dependencies]
+actix-web = "4.4.0"
+tokio = { version = "1.32.0", features = ["full"] }
+lazy_static = "1.4.0"
+local-ip-address = "0.5.5"

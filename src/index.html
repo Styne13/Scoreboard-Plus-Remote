@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scoreboard+ Remote Control</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        /* Adjust button styles for mobile */
+        button {
+            padding: 10px;
+            margin: 5px 0;
+            font-size: 16px;
+        }
+
+        /* Media query for smaller screens */
+        @media (max-width: 600px) {
+            /* Adjust button styles for smaller screens */
+            button {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Scoreboard+ Remote Control</h1>
+
+    <p>
+        <button onclick="sendCommand('Home_Up')">Home Up</button>
+        <button onclick="sendCommand('Home_Down')">Home Down</button>
+    </p>
+    <p>
+        <button onclick="sendCommand('Away_Up')">Away Up</button>
+        <button onclick="sendCommand('Away_Down')">Away Down</button>
+    </p>
+    <p>
+        <button onclick="sendCommand('Period_Up')">Period Up</button>
+        <button onclick="sendCommand('Period_Down')">Period Down</button>
+    </p>
+    <p><button onclick="sendCommand('Clock_Button')">Clock Button</button></p>
+    <p><button onclick="sendCommand('Reset')">Reset</button></p>
+    <p><button onclick="sendCommand('Stop_Watch')">Stop Watch</button></p>
+    <p><button onclick="sendCommand('Stop_Watch_Stop')">Stop Watch Stop</button></p>
+    <p><button onclick="sendCommand('Current_Time')">Current Time</button></p>
+    <p><button onclick="sendCommand('Current_Time_Stop')">Current Time Stop</button></p>
+    <p><button onclick="sendCommand('Reset_Score')">Reset Score</button></p>
+
+    <!-- Input fields -->
+    <p><label for="minutesInput">Minutes:</label>
+    <input type="text" id="minutesInput" placeholder="Minutes">
+    <button onclick="setMinutes()">Set Minutes</button>
+    <label for="secondsInput">Seconds:</label>
+    <input type="text" id="secondsInput" placeholder="Seconds">
+    <button onclick="setSeconds()">Set Seconds</button></p>
+    <p><label for="homeNameInput">Home Name:</label>
+    <input type="text" id="homeNameInput" placeholder="Home Name">
+    <button onclick="setHomeName()">Set Home Name</button>
+    <label for="awayNameInput">Away Name:</label>
+    <input type="text" id="awayNameInput" placeholder="Away Name">
+    <button onclick="setAwayName()">Set Away Name</button></p>
+
+    <!-- Display current server address -->
+    <p>Server Address of Scoreboard+: <span id="serverAddress">{{server_address}}</span></p>
+    <!-- Input fields to update server address -->
+    <p></p><input type="text" id="newServerAddress" placeholder="New Server Address">
+    <button onclick="updateServerAddress()">Update Server Address</button></p>
+
+    <!-- Status -->
+    <div id="status"></div>
+
+    <script>
+        function sendCommand(command) {
+            fetch('/command/' + command)
+                .then(response => response.text())
+                .then(data => {
+                    console.log(data);
+                });
+        }
+
+        function updateServerAddress() {
+            const newAddress = document.getElementById("newServerAddress").value;
+            const payload = JSON.stringify(newAddress);
+
+            fetch('/update_address', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: payload,
+            })
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById("serverAddress").textContent = newAddress;
+                console.log(data);
+            });
+        }
+
+        function setMinutes() {
+            const minutes = document.getElementById("minutesInput").value;
+            const command = "Min:" + minutes;
+            sendCommand(command);
+        }
+
+        function setSeconds() {
+            const seconds = document.getElementById("secondsInput").value;
+            const command = "Sec:" + seconds;
+            sendCommand(command);
+        }
+
+        function setHomeName() {
+            const homeName = document.getElementById("homeNameInput").value;
+            const command = "Home_Name:" + homeName;
+            sendCommand(command);
+        }
+
+        function setAwayName() {
+            const awayName = document.getElementById("awayNameInput").value;
+            const command = "Away_Name:" + awayName;
+            sendCommand(command);
+        }
+    </script>
+</body>
+</html>
