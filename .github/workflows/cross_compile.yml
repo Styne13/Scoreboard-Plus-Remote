@@ -7,14 +7,43 @@ name: Cross-compile
 
 jobs:
   prepare:
+    name: Prepare
     runs-on: ubuntu-latest
     steps:
       - name: Install gcc-mingw-w64 package
         run: |
           sudo apt install -y gcc-mingw-w64
+  release:
+    name: Create Release
+    needs: prepare
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Get Release Version
+        id: version
+        run: |
+          LINE_START=$(grep -n -m 1 "\[package\]" Cargo.toml | cut -f1 -d:)
+          LINE_VERSION=$(awk "NR >= $LINE_START && /version/{print NR}" Cargo.toml | head -1)
+          LINE_VERSION_CONTENTS=$(awk "NR==$LINE_VERSION{ print; exit }" Cargo.toml)
+          CARGO_PACKAGE_VERSION=$(echo "$LINE_VERSION_CONTENTS" | sed 's/version//;s/=//;s/\"//g' | xargs)
+          echo $CARGO_PACKAGE_VERSION
+          echo "version=${CARGO_PACKAGE_VERSION}" >> $GITHUB_OUTPUT
+      - name: Create Release
+        uses: actions/create-release@v1
+        id: create_release
+        env:
+           GITHUB_TOKEN: ${{ github.token }}
+        with:
+          draft: false
+          prerelease: false
+          release_name: ${{ steps.version.outputs.version }}
+          tag_name: ${{ steps.version.outputs.version }}
 
   build:
     name: Build
+    needs: release
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -36,3 +65,21 @@ jobs:
           use-cross: true
           command: build
           args: --release --target=${{ matrix.target }}
+      - name: Export Artifact Name
+        run: echo "artifact=$(find . -type f -name scoreboard-plus-remote* -not -name "*.d")" >> $GITHUB_OUTPUT
+        id: artifact
+      - name: Upload Build Artifact Files
+        uses: actions/upload-artifact@v2.3.1
+        with:
+          name: scoreboard-plus-remote-${{ matrix.target }}
+          path: ${{ steps.artifact.outputs.artifact }}
+      - name: Upload Build Artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ needs.release.outputs.upload_url }}
+          asset_path: ${{ steps.artifact.outputs.artifact }}
+          asset_name: scoreboard-plus-remote-${{ matrix.target }}
+          asset_content_type: application/octet-stream
+
